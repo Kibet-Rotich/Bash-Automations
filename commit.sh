@@ -30,10 +30,28 @@ if [ -z "$COMMIT_MESSAGE" ]; then
     exit 2
 fi
 
-# 3.Detect large files (>50MB)
-LARGE_FILES=$(find . -type f -size +50M -not -path '*/.*' | sed 's|^./||')
+# 3. Detect large files (>50MB) that are NOT ignored by Git
+RAW_LARGE_FILES=$(find . -type f -size +50M -not -path '*/.*' | sed 's|^./||' || true)
+LARGE_FILES=""
+
+if [ -n "$RAW_LARGE_FILES" ]; then
+    while IFS= read -r file; do
+        # Skip empty lines
+        [ -z "$file" ] && continue
+        
+        # If git check-ignore returns 1, it means the file is NOT ignored
+        if ! git check-ignore -q "$file"; then
+            if [ -z "$LARGE_FILES" ]; then
+                LARGE_FILES="$file"
+            else
+                LARGE_FILES="$LARGE_FILES"$'\n'"$file"
+            fi
+        fi
+    done <<< "$RAW_LARGE_FILES"
+fi
+
 if [ -n "$LARGE_FILES" ]; then
-    warn "Large files detected that might fail on GitHub:"
+    warn "Unignored large files detected that might fail on GitHub:"
     echo "$LARGE_FILES"
     read -p "Do you still want to proceed? (y/n) " -n 1 -r
     echo
