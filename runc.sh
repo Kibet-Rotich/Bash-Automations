@@ -24,7 +24,7 @@ if cc "$SOURCE_FILE" -Wall -o "$BINARY_NAME"; then
     
     # 4. Cleanup (Optional)
     # Uncomment the line below if you want to delete the binary after running
-    # rm "$BINARY_NAME"
+    rm "$BINARY_NAME"
 else
     echo "Compilation failed. Please check your code."
     exit 1
